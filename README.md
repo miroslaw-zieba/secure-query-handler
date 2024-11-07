@@ -167,3 +167,7 @@ Executes the SQL query, handles transactions, and returns query results or error
 ---
 
 Each example demonstrates Secure Query Handler’s flexibility across databases. Customize by adding or removing parameters, adjusting validation patterns, or modifying database settings for your environment.
+
+## About Mirosław Zięba
+
+With a strong foundation in software development, Mirosław Zięba is an experienced IT professional specializing in building robust, secure systems and complex web applications. Mirosław has over 18 years of expertise spanning full-stack development, database management, and system architecture. His work includes leading custom software projects for businesses, creating secure data handling systems, and offering mentorship in IT practices. Mirosław is passionate about exploring new technologies and developing solutions that enhance efficiency, security, and scalability in applications.
