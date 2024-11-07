@@ -365,6 +365,148 @@ try {
 }
 ```
 
+### 28. Example: Multi-Step Transaction with Conditional Rollback
+This example demonstrates a transaction across multiple tables, with conditional validation and rollback in case of validation failures.
+
+```php
+require_once 'Query.php';
+
+$dbConfig = [
+    'host' => 'localhost',
+    'user' => 'user',
+    'pass' => 'pass',
+    'name' => 'database',
+    'port' => '3306'
+];
+
+$query = new Query($dbConfig);
+
+try {
+    // Begin transaction
+    $query->setQuery("START TRANSACTION")->execute();
+
+    // Step 1: Insert into orders table
+    $query->setQuery("INSERT INTO orders (customer_id, total_amount) VALUES (:customer_id, :total_amount)")
+          ->addParam(':customer_id', 123, '/^\d+$/')
+          ->addParam(':total_amount', 250.75, '/^\d+(\.\d{1,2})?$/')
+          ->execute();
+
+    $orderId = $query->getLastInsertId();
+
+    // Step 2: Insert into order_items table
+    $query->setQuery("INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (:order_id, :product_id, :quantity, :price)")
+          ->addParam(':order_id', $orderId, '/^\d+$/')
+          ->addParam(':product_id', 456, '/^\d+$/')
+          ->addParam(':quantity', 2, '/^\d+$/')
+          ->addParam(':price', 125.38, '/^\d+(\.\d{1,2})?$/')
+          ->execute();
+
+    // Conditional check
+    if ($query->affectedRows() < 1) {
+        throw new Exception("No items inserted; rolling back.");
+    }
+
+    // Commit transaction
+    $query->setQuery("COMMIT")->execute();
+
+} catch (Exception $e) {
+    $query->setQuery("ROLLBACK")->execute();
+    echo "Transaction failed: " . $e->getMessage();
+}
+```
+
+### 29. Example: Dynamic SQL with Nested Subqueries and Custom Validation
+Using nested subqueries and custom validations for parameterized queries with complex conditions.
+
+```php
+$query->setQuery("SELECT id, name FROM users WHERE role = :role AND id IN (SELECT user_id FROM permissions WHERE level = :level)")
+      ->addParam(':role', 'admin', '/^(admin|user|guest)$/')
+      ->addParam(':level', 5, '/^\d+$/')
+      ->execute();
+```
+
+### 30. Example: Bulk Insert with Data Validation and Logging
+Inserts multiple records in one go, validating each entry and logging unsuccessful insertions.
+
+```php
+$users = [
+    ['name' => 'John Doe', 'email' => 'john.doe@example.com', 'age' => 30],
+    ['name' => 'Jane Smith', 'email' => 'jane.smith@example.com', 'age' => 25],
+    // More users...
+];
+
+try {
+    $query->setQuery("START TRANSACTION")->execute();
+    
+    foreach ($users as $user) {
+        $query->setQuery("INSERT INTO users (name, email, age) VALUES (:name, :email, :age)")
+              ->addParam(':name', $user['name'], '/^[a-zA-Z\s]{3,50}$/')
+              ->addParam(':email', $user['email'], '/^[\w\.\-]+@[\w\.\-]+\.[a-zA-Z]{2,6}$/')
+              ->addParam(':age', $user['age'], '/^\d{1,2}$/')
+              ->execute();
+
+        if ($query->affectedRows() < 1) {
+            $query->logSecurityEvent("INSERT_FAILED", 'user', json_encode($user));
+        }
+    }
+
+    $query->setQuery("COMMIT")->execute();
+
+} catch (Exception $e) {
+    $query->setQuery("ROLLBACK")->execute();
+    echo "Bulk insert failed: " . $e->getMessage();
+}
+```
+
+### 31. Example: Complex Join with Real-Time Condition Checks
+Query involving multiple joins and real-time data filtering.
+
+```php
+$query->setQuery("
+    SELECT u.id, u.name, SUM(o.total) as total_spent 
+    FROM users u
+    JOIN orders o ON u.id = o.user_id
+    JOIN payments p ON o.id = p.order_id
+    WHERE u.status = :status AND p.status = :payment_status
+    GROUP BY u.id
+    HAVING total_spent > :min_spent
+")
+->addParam(':status', 'active', '/^(active|inactive)$/')
+->addParam(':payment_status', 'completed', '/^(completed|pending)$/')
+->addParam(':min_spent', 1000, '/^\d+$/')
+->execute();
+```
+
+### 32. Example: Conditional Updates with Multiple Table Interactions
+Example of conditional updates across multiple tables with real-time logging of affected rows.
+
+```php
+try {
+    $query->setQuery("START TRANSACTION")->execute();
+
+    // Update user status
+    $query->setQuery("UPDATE users SET status = 'inactive' WHERE last_login < NOW() - INTERVAL 1 YEAR")
+          ->execute();
+
+    $inactiveCount = $query->affectedRows();
+
+    // Update orders linked to inactive users
+    $query->setQuery("UPDATE orders SET status = 'cancelled' WHERE user_id IN (SELECT id FROM users WHERE status = 'inactive')")
+          ->execute();
+
+    $cancelledOrders = $query->affectedRows();
+
+    $query->logSecurityEvent("USER_INACTIVITY_UPDATE", 'inactive_users', $inactiveCount);
+    $query->logSecurityEvent("ORDER_CANCELLATION", 'cancelled_orders', $cancelledOrders);
+
+    $query->setQuery("COMMIT")->execute();
+
+} catch (Exception $e) {
+    $query->setQuery("ROLLBACK")->execute();
+    echo "Conditional update failed: " . $e->getMessage();
+}
+```
+
 Each example demonstrates how to build and execute secure SQL statements using `SecureQueryHandler`, ensuring both flexibility and security in handling dynamic data.
 
 ## Method Documentation for Secure Query Handler Class
