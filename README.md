@@ -12,11 +12,84 @@
 **Secure Query Handler** is an advanced PHP class by Mirosław Zięba, designed for secure and efficient SQL query management in PHP applications. This class supports multiple databases, parameterized queries, and automatic transaction handling, and is ideal for developers who prioritize robust database security and dynamic query execution.
 
 ## Features
-- **Secure SQL Execution**: Prevents SQL injection with parameterized queries.
-- **Automatic Transaction Management**: Commits or rolls back transactions based on success or failure.
-- **Dynamic Parameter Validation**: Supports custom regex validation.
-- **Security Logging**: Logs events with error points and customizable alerts.
-- **Multi-Database Support**: Easily connects to MySQL (default), PostgreSQL, and MSSQL.
+
+The `SecureQueryHandler` class provides a wide range of functionalities aimed at delivering secure, efficient, and flexible SQL query handling in PHP applications.
+
+### 1. Secure SQL Execution
+   - **Parameterized Queries**: Prevents SQL injection attacks by using prepared statements with parameterized queries.
+   - **Input Validation**: Ensures input values meet specified formats using regular expressions, reducing injection risks.
+
+### 2. Automatic Transaction Management
+   - **Commit & Rollback**: Automatically commits or rolls back transactions based on query success or failure.
+   - **Nested Transactions**: Handles multiple levels of transactions within a single request, ensuring data integrity.
+
+### 3. Dynamic Parameter Validation
+   - **Regular Expressions**: Validates each parameter using customizable regex patterns for data integrity and security.
+   - **Predefined Validators**: Includes built-in validators for common data types like integers, emails, dates, and alphanumeric strings.
+
+### 4. Security Event Logging
+   - **Comprehensive Logging**: Tracks all executed queries, errors, and validation failures, creating a detailed log.
+   - **Security Event Scoring**: Assigns error points for failed queries and unauthorized actions; blocks IPs with repeated violations.
+   - **Detailed Audit Trails**: Provides a full history of all interactions for audit purposes.
+
+### 5. Customizable Error Handling
+   - **Retry Mechanism**: Attempts to re-execute failed queries based on a defined number of retry attempts.
+   - **Dynamic IP Blocking**: Blocks IP addresses with multiple failed attempts or security violations based on a points system.
+   - **Error Notifications**: Configurable to send email notifications on critical errors, aiding rapid response.
+
+### 6. Real-Time Query Caching
+   - **Query Results Caching**: Caches frequently executed queries to improve performance on repeated queries.
+   - **Cache Expiry Control**: Allows setting custom cache expiration times for different query types.
+
+### 7. Flexible Debugging Options
+   - **Debug Mode**: Enables verbose logging and stack traces for easier debugging during development.
+   - **Customizable Log Output**: Allows configuration to save logs in files, database entries, or send them via email.
+
+### 8. Transaction Safety
+   - **Automatic Rollback**: Automatically rolls back open transactions upon encountering an exception.
+   - **Multiple Savepoints**: Supports savepoints within transactions, enabling partial rollbacks if necessary.
+
+### 9. Multi-Database Compatibility
+   - **MySQL, PostgreSQL, MSSQL Support**: Built with the flexibility to connect and operate with MySQL, PostgreSQL, or MSSQL.
+   - **Dynamic Configuration**: Database credentials and configurations can be set per query or inherited from default session settings.
+
+### 10. Customizable Query Execution Context
+   - **Module and Class Tracking**: Tracks the module and class where each query originates, useful for complex applications.
+   - **Execution Timing**: Measures and logs execution time for each query, helping identify slow operations.
+   
+### 11. Real-Time Query Performance Monitoring
+   - **Execution Time Logging**: Measures the time taken for each query, allowing real-time performance tracking.
+   - **Optimized Execution**: Identifies and logs slow queries for further optimization.
+
+### 12. Data Integrity with Conditional Constraints
+   - **Conditional Parameters**: Ensures that data constraints are met before query execution.
+   - **Dynamic Constraints**: Adjusts constraints dynamically based on the query context, maintaining data integrity.
+
+### 13. IP and User-Based Security Filtering
+   - **IP Whitelisting and Blacklisting**: Filters IPs based on user-defined security policies.
+   - **Role-Based Access Control**: Manages permissions based on user roles, restricting query execution to authorized users.
+
+### 14. Robust Audit Trails
+   - **Action-Specific Logging**: Logs specific user actions within queries for compliance and auditing.
+   - **Historical Data Review**: Retains query histories for forensic analysis and historical review.
+
+### 15. Comprehensive Error Scoring
+   - **Customizable Points System**: Tracks and assigns error points for security violations, aiding in automated IP blocking.
+   - **Progressive Penalties**: Implements escalating penalties for repeat offenders, helping to prevent brute-force attacks.
+
+### 16. Intelligent Query Analysis
+   - **Error Analysis**: Automatically categorizes errors by type, frequency, and query source.
+   - **Automated Optimization Suggestions**: Provides suggestions for optimization based on query patterns and performance data.
+
+### 17. Advanced Query Debugging
+   - **Query Execution Profiling**: Profiles each query’s execution to help with debugging and optimization.
+   - **Developer Mode**: When enabled, provides developers with detailed query statistics and error traces.
+
+### 18. Integration with External Tools
+   - **External Notification Hooks**: Allows integration with external logging or notification tools for real-time alerting.
+   - **Flexible Configuration**: Configurable for integration with third-party performance and security monitoring tools.
+
+This expanded `SecureQueryHandler` class by Mirosław Zięba ensures secure, flexible, and highly customizable SQL query handling, making it ideal for PHP applications requiring robust data management and security.
 
 ## Installation
 1. Clone this repository:
