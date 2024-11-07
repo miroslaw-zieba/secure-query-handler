@@ -367,23 +367,145 @@ try {
 
 Each example demonstrates how to build and execute secure SQL statements using `SecureQueryHandler`, ensuring both flexibility and security in handling dynamic data.
 
-## Method Documentation
+## Method Documentation for Secure Query Handler Class
 
 ### `__construct($dbConfig = null)`
-Initializes the database connection with an optional configuration array. Defaults to session-stored settings if no configuration is provided.
+Initializes a new instance of the Secure Query Handler with an optional database configuration array. 
+If no custom configuration is provided, the class defaults to settings stored in the session (`$_SESSION['db']`).
 
-### `setQuery($query)`
-Sets the SQL query with placeholders for parameters.
+- **Parameters**:
+  - **`$dbConfig`** (array, optional): Configuration array with the following fields:
+    - **`host`** (string): Database server hostname.
+    - **`user`** (string): Database username.
+    - **`pass`** (string): Database password.
+    - **`name`** (string): Database name.
+    - **`port`** (string, optional): Port number (defaults to the standard database port if not provided).
 
-### `addParam($param, $value, $validate = null)`
-Adds a parameter with optional regex validation.
+- **Example**:
+```php
+// Using default database configuration from session
+$query = new Query();
 
-### `execute()`
-Executes the SQL query, handles transactions, and returns query results or error details.
+// Custom database configuration
+$dbConfig = [
+    'host' => 'localhost',
+    'user' => 'custom_user',
+    'pass' => 'custom_pass',
+    'name' => 'custom_database',
+    'port' => '3308'
+];
+$query = new Query($dbConfig);
+```
 
 ---
 
-Each example demonstrates Secure Query Handler’s flexibility across databases. Customize by adding or removing parameters, adjusting validation patterns, or modifying database settings for your environment.
+### `setQuery($query)`
+Sets the SQL query to be executed, allowing placeholders for parameters to be bound later.
+
+- **Parameters**:
+  - **`$query`** (string): SQL query string with placeholders (e.g., `:id`, `:email`).
+
+- **Returns**: 
+  - Instance of `Secure Query Handler` for chaining methods.
+
+- **Example**:
+```php
+$query->setQuery("SELECT * FROM users WHERE id = :id")
+      ->addParam(':id', 1)
+      ->execute();
+```
+
+---
+
+### `addParam($param, $value, $validate = null)`
+Adds a parameter to the query, with optional validation through regular expressions. This feature ensures only valid data is injected into queries.
+
+- **Parameters**:
+  - **`$param`** (string): Named placeholder in the query (e.g., `:id`).
+  - **`$value`** (mixed): Value to be bound to the placeholder.
+  - **`$validate`** (string, optional): Regular expression pattern to validate the format of `$value`.
+
+- **Throws**: 
+  - Exception if validation fails.
+
+- **Returns**: 
+  - Instance of `Secure Query Handler` for chaining.
+
+- **Example**:
+```php
+$query->setQuery("SELECT * FROM orders WHERE order_id = :order_id")
+      ->addParam(':order_id', 123, '/^\d+$/') // Order ID must be a number
+      ->execute();
+```
+
+---
+
+### `execute()`
+Executes the current SQL query, binding parameters and handling transactions.
+
+- **Returns**: 
+  - Associative array containing:
+    - **`success`** (bool): `true` if the query executed successfully.
+    - **`executionTime`** (float): Time taken to execute the query.
+    - **`query`** (string): Executed SQL query.
+    - Additional fields for specific query types (e.g., `lastInsertId` for `INSERT` queries).
+
+- **Example**:
+```php
+$query->setQuery("INSERT INTO products (name, price) VALUES (:name, :price)")
+      ->addParam(':name', 'Laptop')
+      ->addParam(':price', 1500.99)
+      ->execute();
+```
+
+---
+
+### `enableDebugMode($logTo = [])`
+Activates debug mode, providing more detailed error logging and configuration options for where logs are stored.
+
+- **Parameters**:
+  - **`$logTo`** (array): Specifies output destinations for logs, such as `"database"`, `"email"`, etc.
+
+- **Example**:
+```php
+$query->enableDebugMode(['database', 'email']);
+```
+
+---
+
+### `validateParam($value, $validate)`
+Validates a parameter based on a specified regular expression pattern.
+
+- **Parameters**:
+  - **`$value`** (mixed): The value to validate.
+  - **`$validate`** (string): Regular expression for validation.
+
+- **Returns**:
+  - **`true`** if validation passes, otherwise **`false`**.
+
+- **Example**:
+```php
+// This will only proceed if ':email' matches the email format
+$query->addParam(':email', 'user@example.com', '/^[\w.-]+@[\w.-]+\.[a-zA-Z]{2,6}$/');
+```
+
+---
+
+### `logSecurityEvent($eventCode, $param = null, $value = null)`
+Logs a security event, adding an entry to the security log for monitoring purposes.
+
+- **Parameters**:
+  - **`$eventCode`** (string): Code identifying the type of event (e.g., SQL injection attempt).
+  - **`$param`** (string, optional): Name of the parameter involved.
+  - **`$value`** (mixed, optional): Value that triggered the event.
+
+- **Example**:
+```php
+// Manually logging a security event
+$query->logSecurityEvent("INVALID_PARAMETER_FORMAT", "age", "invalid_age");
+```
+
+---
 
 ## About Mirosław Zięba
 
