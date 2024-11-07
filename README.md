@@ -1,7 +1,7 @@
 
 # Secure Query Handler
 
-**Secure Query Handler** by Mirosław Zięba is an advanced PHP class for secure, efficient SQL query management in PHP applications. This class is optimized for developers requiring robust database security, dynamic parameter validation, and automatic transaction handling.
+**Secure Query Handler** by Mirosław Zięba is an advanced PHP class for secure, efficient SQL query management in PHP applications. This class is optimized for developers requiring robust database security, dynamic parameter validation and automatic transaction handling.
 
 ## Features
 
