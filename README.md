@@ -29,11 +29,155 @@
    ```
 
 
-## Complex Query Examples
+## Query Examples
 
-Here are several advanced examples showcasing the flexibility and capabilities of `SecureQueryHandler`:
+Here are several examples showcasing the flexibility and capabilities of `SecureQueryHandler`:
 
-### Basic Query with Default Database
+### 1. Example: Basic Select Query
+```php
+$query = new Query();
+$query->setQuery("SELECT * FROM users")->execute();
+```
+
+### 2. Example: Select with a Single Parameter
+```php
+$query->setQuery("SELECT * FROM users WHERE id = :id")
+      ->addParam(':id', 1, '/^\d+$/') // ID must be numeric
+      ->execute();
+```
+
+### 3. Example: Simple Insert Statement
+```php
+$query->setQuery("INSERT INTO products (name, price) VALUES (:name, :price)")
+      ->addParam(':name', 'Keyboard', '/^[\w\s]{3,50}$/')
+      ->addParam(':price', 49.99, '/^\d+(\.\d{1,2})?$/')
+      ->execute();
+```
+
+### 4. Example: Basic Update Statement
+```php
+$query->setQuery("UPDATE users SET email = :email WHERE id = :id")
+      ->addParam(':email', 'newemail@example.com', '/^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,6}$/')
+      ->addParam(':id', 1, '/^\d+$/')
+      ->execute();
+```
+
+### 5. Example: Deleting a Record
+```php
+$query->setQuery("DELETE FROM sessions WHERE user_id = :user_id")
+      ->addParam(':user_id', 345, '/^\d+$/')
+      ->execute();
+```
+
+### 6. Example: Select with Multiple Parameters
+```php
+$query->setQuery("SELECT * FROM orders WHERE customer_id = :customer_id AND status = :status")
+      ->addParam(':customer_id', 123, '/^\d+$/')
+      ->addParam(':status', 'shipped', '/^(pending|shipped|delivered)$/')
+      ->execute();
+```
+
+### 7. Example: Inserting with Dynamic Date
+```php
+$query->setQuery("INSERT INTO orders (customer_id, order_date) VALUES (:customer_id, NOW())")
+      ->addParam(':customer_id', 789, '/^\d+$/')
+      ->execute();
+```
+
+### 8. Example: Updating with Conditional Logic
+```php
+$query->setQuery("UPDATE products SET stock = stock - :quantity WHERE id = :product_id")
+      ->addParam(':quantity', 5, '/^\d+$/')
+      ->addParam(':product_id', 102, '/^\d+$/')
+      ->execute();
+```
+
+### 9. Example: Simple Aggregate Query
+```php
+$query->setQuery("SELECT COUNT(*) as user_count FROM users WHERE status = :status")
+      ->addParam(':status', 'active', '/^(active|inactive)$/')
+      ->execute();
+```
+
+### 10. Example: Grouping and Ordering Results
+```php
+$query->setQuery("SELECT department, COUNT(*) as count FROM employees GROUP BY department ORDER BY count DESC")
+      ->execute();
+```
+
+### 11. Example: Fetching Specific Columns
+```php
+$query->setQuery("SELECT name, email FROM users WHERE role = :role")
+      ->addParam(':role', 'admin', '/^(admin|user)$/')
+      ->execute();
+```
+
+### 12. Example: Checking for Existence
+```php
+$query->setQuery("SELECT EXISTS(SELECT 1 FROM users WHERE email = :email) AS email_exists")
+      ->addParam(':email', 'test@example.com', '/^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,6}$/')
+      ->execute();
+```
+
+### 13. Example: Using a Date Range
+```php
+$query->setQuery("SELECT * FROM events WHERE event_date BETWEEN :start_date AND :end_date")
+      ->addParam(':start_date', '2023-01-01', '/^\d{4}-\d{2}-\d{2}$/')
+      ->addParam(':end_date', '2023-12-31', '/^\d{4}-\d{2}-\d{2}$/')
+      ->execute();
+```
+
+### 14. Example: Insert with Generated UUID
+```php
+$query->setQuery("INSERT INTO sessions (user_id, session_id) VALUES (:user_id, UUID())")
+      ->addParam(':user_id', 333, '/^\d+$/')
+      ->execute();
+```
+
+### 15. Example: Advanced String Pattern Matching
+```php
+$query->setQuery("SELECT * FROM products WHERE name LIKE :pattern")
+      ->addParam(':pattern', '%Laptop%', '/^%[\w\s]+%$/')
+      ->execute();
+```
+
+### 16. Example: Using a Limit and Offset
+```php
+$query->setQuery("SELECT * FROM orders WHERE status = :status LIMIT 10 OFFSET 20")
+      ->addParam(':status', 'pending', '/^(pending|shipped|delivered)$/')
+      ->execute();
+```
+
+### 17. Example: Multi-Column Sorting
+```php
+$query->setQuery("SELECT * FROM employees ORDER BY department ASC, last_name DESC")
+      ->execute();
+```
+
+### 18. Example: Conditional Update with Multiple Parameters
+```php
+$query->setQuery("UPDATE accounts SET balance = balance + :amount WHERE id = :account_id AND status = :status")
+      ->addParam(':amount', 100.00, '/^\d+(\.\d{1,2})?$/')
+      ->addParam(':account_id', 888, '/^\d+$/')
+      ->addParam(':status', 'active', '/^(active|inactive)$/')
+      ->execute();
+```
+
+### 19. Example: Simple Join Query
+```php
+$query->setQuery("SELECT u.name, o.order_date FROM users u JOIN orders o ON u.id = o.user_id WHERE u.id = :user_id")
+      ->addParam(':user_id', 555, '/^\d+$/')
+      ->execute();
+```
+
+### 20. Example: Insert with Current Timestamp
+```php
+$query->setQuery("INSERT INTO logs (event_type, event_timestamp) VALUES (:event_type, CURRENT_TIMESTAMP)")
+      ->addParam(':event_type', 'login', '/^(login|logout|error)$/')
+      ->execute();
+```
+
+### 21. Example: Basic Query with Default Database
 A simple `SELECT` query using the default database configuration.
 
 ```php
@@ -45,7 +189,7 @@ $query->setQuery("SELECT * FROM users WHERE status = :status")
       ->execute();
 ```
 
-### Query with Multiple Parameters and Validations
+### 22. Example: Query with Multiple Parameters and Validations
 An example showcasing a query with multiple parameters, each validated with regular expressions.
 
 ```php
@@ -56,7 +200,7 @@ $query->setQuery("SELECT * FROM orders WHERE customer_id = :customer_id AND stat
       ->execute();
 ```
 
-### Insert with Transaction Management
+### 23. Example: Insert with Transaction Management
 Demonstrating how transactions ensure both inserts complete successfully or roll back if one fails.
 
 ```php
@@ -80,7 +224,7 @@ try {
 }
 ```
 
-### Complex Update within a Transaction
+### 24. Example: Complex Update within a Transaction
 An example where multiple tables are updated conditionally, and changes are rolled back if any update fails.
 
 ```php
@@ -104,7 +248,7 @@ try {
 }
 ```
 
-### Aggregation with Grouping and Having Clause
+### 25. Example: Aggregation with Grouping and Having Clause
 Using aggregation functions with grouping to count entries and filter by a minimum count.
 
 ```php
@@ -113,7 +257,7 @@ $query->setQuery("SELECT department, COUNT(*) as employee_count FROM employees G
       ->execute();
 ```
 
-### Parameterized Nested Subquery
+### 26. Example: Parameterized Nested Subquery
 Executing a query with a nested subquery for advanced data selection.
 
 ```php
@@ -122,7 +266,7 @@ $query->setQuery("SELECT * FROM products WHERE price > (SELECT AVG(price) FROM p
       ->execute();
 ```
 
-### Multi-Step Conditional Insert and Update
+### 27. Example: Multi-Step Conditional Insert and Update
 Inserting data and updating records conditionally using parameters and transactions.
 
 ```php
