@@ -1,6 +1,6 @@
 
-# SecureQueryHandler
-A secure and efficient SQL query handling class for PHP applications, designed to protect against SQL injection and manage SQL queries with built-in parameter validation, transaction handling, and security logging.
+# Secure-Query-Handler
+A secure and efficient SQL query handling class for PHP applications, designed by Mirosław Zięba to protect against SQL injection and manage SQL queries with built-in parameter validation, transaction handling, and security logging.
 
 ## Features
 - **Secure SQL Execution**: Prevents SQL injection attacks with parameterized queries.
@@ -12,7 +12,7 @@ A secure and efficient SQL query handling class for PHP applications, designed t
 ## Installation
 1. Clone this repository:
    ```bash
-   git clone https://github.com/miroslaw-zieba/SecureQueryHandler.git
+   git clone https://github.com/miroslaw-zieba/Secure-Query-Handler.git
    ```
 2. Include the `Query.php` file in your project:
    ```php
@@ -94,8 +94,8 @@ Enables debug mode and configures logging options.
 
 ---
 
-### Usage Notes
-The class `SecureQueryHandler` offers the flexibility to switch between different databases dynamically. If additional database credentials (including port) are needed, these can be specified in the `$dbConfig` array when initializing the class.
+## Usage Notes
+The class `Secure-Query-Handler`, developed by Mirosław Zięba, offers the flexibility to switch between different databases dynamically. If additional database credentials (including port) are needed, these can be specified in the `$dbConfig` array when initializing the class.
 
 ```php
 // Example of connecting to a specific database with a different port
@@ -113,21 +113,7 @@ $query->setQuery("SELECT * FROM example_table WHERE id = :id")
       ->execute();
 ```
 
-### `retryOnFailure()`
-Attempts to re-execute the query if it initially fails.
-
-- **Behavior**: 
-  Implements retry logic on query failure to avoid transient database issues. This method manages re-execution until success or a maximum retry limit.
-
 ---
 
-### `logSecurityEvent($eventCode, $param = null, $value = null)`
-Logs security-related events with a custom points system.
-
-- **Parameters**:
-  - **`$eventCode`** (string): Code representing the type of security event.
-  - **`$param`** (string, optional): Parameter related to the event.
-  - **`$value`** (mixed, optional): Value that triggered the event.
-
-- **Behavior**: 
-  Assigns and logs security points for specific events. If cumulative points for a user reach the threshold, the user is blocked.
+### About the Author
+This `Secure-Query-Handler` class was developed by Mirosław Zięba, a seasoned developer committed to enhancing database security in PHP applications. Visit [Mirosław Zięba's GitHub](https://github.com/miroslaw-zieba) for more projects.
