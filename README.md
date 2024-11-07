@@ -9,7 +9,7 @@
 ![Last Commit](https://img.shields.io/github/last-commit/miroslaw-zieba/secure-query-handler)
 ![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen)
 
-**Secure Query Handler** is an advanced PHP class by Mirosław Zięba, designed for secure and efficient SQL query management in PHP applications. This class supports multiple databases, parameterized queries, and automatic transaction handling, and is ideal for developers who prioritize robust database security and dynamic query execution.
+**Secure Query Handler** is an advanced PHP class by Mirosław Zięba, designed for secure and efficient SQL query management in PHP applications. Developed as part of an extensive overhaul of the proprietary PHP framework StarFrame to its latest version, this class supports multiple databases, parameterized queries, and automatic transaction handling. It's tailored for developers who prioritize robust database security, dynamic query execution, and flexibility in managing multiple database configurations.
 
 ## Features
 
