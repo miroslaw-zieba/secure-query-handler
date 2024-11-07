@@ -1,3 +1,5 @@
+![License](https://img.shields.io/badge/license-MIT-blue)
+![PHP](https://img.shields.io/badge/php-%3E%3D7.4-777BB4)
 
 # Secure Query Handler
 
