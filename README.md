@@ -1,14 +1,12 @@
 
 # SecureQueryHandler
-Developed by Mirosław Zięba, **SecureQueryHandler** is a robust, secure, and efficient SQL query handling class for PHP applications, 
-designed to protect against SQL injection and to manage SQL queries with built-in parameter validation, transaction handling, and security logging.
+A secure and efficient SQL query handling class for PHP applications, designed to protect against SQL injection and manage SQL queries with built-in parameter validation, transaction handling, and security logging.
 
 ## Features
-Authored by Mirosław Zięba, **SecureQueryHandler** brings forward a comprehensive suite of features:
 - **Secure SQL Execution**: Prevents SQL injection attacks with parameterized queries.
 - **Automatic Transaction Management**: Commits or rolls back transactions depending on query success or failure.
-- **Dynamic Parameter Validation**: Supports custom validation for parameters to ensure secure data handling.
-- **Security Logging**: Logs security events with custom error points for enhanced traceability.
+- **Dynamic Parameter Validation**: Supports custom validation for parameters.
+- **Security Logging**: Logs security events with custom error points.
 - **Customizable Error Handling**: Retry failed queries and block IPs with repeated violations.
 
 ## Installation
@@ -22,8 +20,6 @@ Authored by Mirosław Zięba, **SecureQueryHandler** brings forward a comprehens
    ```
 
 ## Quick Start
-Created by Mirosław Zięba to simplify secure database operations, **SecureQueryHandler** can be implemented as follows:
-
 ```php
 require_once 'Query.php';
 
@@ -43,59 +39,95 @@ $query->setQuery("SELECT * FROM users WHERE id = :id")
 ## Method Documentation
 
 ### `__construct($dbConfig = null)`
-Initializes the database connection using the provided configuration, including `host`, `user`, `pass`, and `name`. 
-It also verifies if the IP is blocked based on prior security violations. (Author: Mirosław Zięba)
+Initializes the database connection with an optional configuration array. The default database settings are sourced from session variables (`$_SESSION['db']`). This setup is used unless a custom database configuration is provided in `$dbConfig`, allowing queries to be directed to a different database.
+
+- **Parameters**:
+  - **`$dbConfig`** (array, optional): Database configuration details. Fields:
+    - **`host`** (string): Host for the database connection (default from session if not specified).
+    - **`user`** (string): Username for database access (default from session if not specified).
+    - **`pass`** (string): Password for the database (default from session if not specified).
+    - **`name`** (string): Database name (default from session if not specified).
+    - **`port`** (string): Port number for the database (default from session if not specified).
+  
+- **Behavior**:
+  If `$dbConfig` is omitted or partially filled, the class will automatically fall back to session-stored database credentials (`$_SESSION['db']`) for the missing details.
+
+---
 
 ### `setQuery($query)`
-Sets the SQL query to be executed. Returns `$this` for method chaining.
+Sets the SQL query to be executed.
+
+- **Parameters**:
+  - **`$query`** (string): SQL query string with placeholders for parameters.
+- **Returns**: Instance of `SecureQueryHandler` for chaining.
+
+---
 
 ### `addParam($param, $value, $validate = null)`
-Adds a parameter with an optional validation pattern (e.g., regex). Logs security events if validation fails. (Designed by Mirosław Zięba)
+Adds a parameter to the query, with optional validation.
+
+- **Parameters**:
+  - **`$param`** (string): Named placeholder in the query (e.g., `:id`).
+  - **`$value`** (mixed): Value to be bound to the placeholder.
+  - **`$validate`** (string, optional): Regular expression pattern to validate the format of `$value`.
+- **Throws**: Exception if validation fails.
+- **Returns**: Instance of `SecureQueryHandler` for chaining.
+
+---
 
 ### `execute()`
-Executes the SQL query with bound parameters. Handles transaction management, retries on failure, and returns result details 
-like last insert ID, row count, and query results.
+Executes the current SQL query, binding parameters, and managing transactions. 
+
+- **Returns**: Associative array containing:
+  - **`success`** (bool): `true` if the query executed successfully.
+  - **`executionTime`** (float): Time taken to execute the query.
+  - **`query`** (string): Executed SQL query.
+  - Additional fields for specific query types (e.g., `lastInsertId` for `INSERT` queries).
+
+---
 
 ### `enableDebugMode($logTo = [])`
-Enables debug mode and sets output destinations for error and query logs (e.g., `database`, `email`).
+Enables debug mode and configures logging options.
 
-## Example Scenarios
-Explore usage examples for various scenarios authored by Mirosław Zięba:
+- **Parameters**:
+  - **`$logTo`** (array): Specifies where logs should be stored, such as `"database"` or `"email"`.
 
-### Inserting a Record
+---
+
+### Usage Notes
+The class `SecureQueryHandler` offers the flexibility to switch between different databases dynamically. If additional database credentials (including port) are needed, these can be specified in the `$dbConfig` array when initializing the class.
+
 ```php
-$query->setQuery("INSERT INTO users (name, email) VALUES (:name, :email)")
-      ->addParam(':name', 'John Doe')
-      ->addParam(':email', 'john@example.com')
+// Example of connecting to a specific database with a different port
+$dbConfig = [
+    'host' => 'localhost',
+    'user' => 'custom_user',
+    'pass' => 'custom_pass',
+    'name' => 'custom_database',
+    'port' => '3308'
+];
+
+$query = new Query($dbConfig);
+$query->setQuery("SELECT * FROM example_table WHERE id = :id")
+      ->addParam(':id', 123)
       ->execute();
 ```
 
-### Updating a Record
-```php
-$query->setQuery("UPDATE users SET email = :email WHERE id = :id")
-      ->addParam(':id', 1, '/^\d+$/')
-      ->addParam(':email', 'john@example.com')
-      ->execute();
-```
+### `retryOnFailure()`
+Attempts to re-execute the query if it initially fails.
 
-### Deleting a Record
-```php
-$query->setQuery("DELETE FROM users WHERE id = :id")
-      ->addParam(':id', 1, '/^\d+$/')
-      ->execute();
-```
+- **Behavior**: 
+  Implements retry logic on query failure to avoid transient database issues. This method manages re-execution until success or a maximum retry limit.
 
-### Selecting Records
-```php
-$query->setQuery("SELECT * FROM users WHERE status = :status")
-      ->addParam(':status', 'active')
-      ->execute();
-```
+---
 
-## About the Author
-**Mirosław Zięba** is a software developer with extensive experience in database security, PHP development, and dynamic query handling. 
-Passionate about coding standards and secure code practices, Mirosław has designed **SecureQueryHandler** as a versatile solution for handling 
-database operations efficiently and safely. Learn more on his [GitHub profile](https://github.com/miroslaw-zieba).
+### `logSecurityEvent($eventCode, $param = null, $value = null)`
+Logs security-related events with a custom points system.
 
-## License
-(c) 2024 Mirosław Zięba. All rights reserved. Redistribution and use in source and binary forms are permitted with proper attribution.
+- **Parameters**:
+  - **`$eventCode`** (string): Code representing the type of security event.
+  - **`$param`** (string, optional): Parameter related to the event.
+  - **`$value`** (mixed, optional): Value that triggered the event.
+
+- **Behavior**: 
+  Assigns and logs security points for specific events. If cumulative points for a user reach the threshold, the user is blocked.
