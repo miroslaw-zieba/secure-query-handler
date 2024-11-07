@@ -28,12 +28,13 @@
    require_once 'path/to/Query.php';
    ```
 
+
 ## Complex Query Examples
 
 Here are several advanced examples showcasing the flexibility and capabilities of `SecureQueryHandler`:
 
-### Example 1: Basic Query (Using Default Database)
-This example demonstrates a simple `SELECT` query using the default database.
+### Basic Query with Default Database
+A simple `SELECT` query using the default database configuration.
 
 ```php
 require_once 'Query.php';
@@ -44,8 +45,8 @@ $query->setQuery("SELECT * FROM users WHERE status = :status")
       ->execute();
 ```
 
-### Example 2: Query with Multiple Parameters and Validations
-This example showcases a query with multiple parameters, each validated using regular expressions for enhanced security.
+### Query with Multiple Parameters and Validations
+An example showcasing a query with multiple parameters, each validated with regular expressions.
 
 ```php
 $query->setQuery("SELECT * FROM orders WHERE customer_id = :customer_id AND status = :status AND created_at > :created_at")
@@ -55,38 +56,56 @@ $query->setQuery("SELECT * FROM orders WHERE customer_id = :customer_id AND stat
       ->execute();
 ```
 
-### Example 3: Inserting Data with Transaction Management
-Using transactions to ensure data integrity in case of failures during an `INSERT` operation.
+### Insert with Transaction Management
+Demonstrating how transactions ensure both inserts complete successfully or roll back if one fails.
 
 ```php
-$query->setQuery("INSERT INTO products (name, price, created_at) VALUES (:name, :price, NOW())")
-      ->addParam(':name', 'Laptop', '/^[a-zA-Z0-9\s]{3,50}$/') // Product name validation
-      ->addParam(':price', 1200.50, '/^\d+(\.\d{1,2})?$/') // Price format validation
-      ->execute();
+try {
+    $query->beginTransaction();
+
+    $query->setQuery("INSERT INTO products (name, price, created_at) VALUES (:name, :price, NOW())")
+          ->addParam(':name', 'Laptop', '/^[a-zA-Z0-9\s]{3,50}$/')
+          ->addParam(':price', 1200.50, '/^\d+(\.\d{1,2})?$/')
+          ->execute();
+
+    $query->setQuery("INSERT INTO inventory (product_id, stock) VALUES (:product_id, :stock)")
+          ->addParam(':product_id', $query->lastInsertId())
+          ->addParam(':stock', 50, '/^\d+$/')
+          ->execute();
+
+    $query->commitTransaction();
+} catch (Exception $e) {
+    $query->rollbackTransaction();
+    throw $e;
+}
 ```
 
-### Example 4: Complex Update with Conditional Validation
-An example where conditional validations are used to ensure only valid input is processed.
+### Complex Update within a Transaction
+An example where multiple tables are updated conditionally, and changes are rolled back if any update fails.
 
 ```php
-$query->setQuery("UPDATE users SET email = :email, role = :role WHERE id = :id")
-      ->addParam(':email', 'user@example.com', '/^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,6}$/') // Email format validation
-      ->addParam(':role', 'admin', '/^(admin|user|guest)$/') // Role validation
-      ->addParam(':id', 789, '/^\d+$/') // ID must be numeric
-      ->execute();
+try {
+    $query->beginTransaction();
+
+    $query->setQuery("UPDATE accounts SET balance = balance - :amount WHERE id = :account_id")
+          ->addParam(':amount', 100, '/^\d+(\.\d{1,2})?$/')
+          ->addParam(':account_id', 1, '/^\d+$/')
+          ->execute();
+
+    $query->setQuery("UPDATE accounts SET balance = balance + :amount WHERE id = :recipient_account_id")
+          ->addParam(':amount', 100, '/^\d+(\.\d{1,2})?$/')
+          ->addParam(':recipient_account_id', 2, '/^\d+$/')
+          ->execute();
+
+    $query->commitTransaction();
+} catch (Exception $e) {
+    $query->rollbackTransaction();
+    throw $e;
+}
 ```
 
-### Example 5: Deleting Records with Logging
-A `DELETE` example where records are deleted based on a specific condition, with logging for auditing.
-
-```php
-$query->setQuery("DELETE FROM sessions WHERE user_id = :user_id AND expired_at < NOW()")
-      ->addParam(':user_id', 345, '/^\d+$/') // User ID validation
-      ->execute();
-```
-
-### Example 6: Aggregation with Grouping and Having Clause
-Complex query with aggregation, grouping, and a `HAVING` clause for more advanced SQL operations.
+### Aggregation with Grouping and Having Clause
+Using aggregation functions with grouping to count entries and filter by a minimum count.
 
 ```php
 $query->setQuery("SELECT department, COUNT(*) as employee_count FROM employees GROUP BY department HAVING employee_count > :min_count")
@@ -94,13 +113,39 @@ $query->setQuery("SELECT department, COUNT(*) as employee_count FROM employees G
       ->execute();
 ```
 
-### Example 7: Parameterized Query with Nested Subqueries
-An example of a nested subquery within a parameterized `SELECT` statement.
+### Parameterized Nested Subquery
+Executing a query with a nested subquery for advanced data selection.
 
 ```php
 $query->setQuery("SELECT * FROM products WHERE price > (SELECT AVG(price) FROM products WHERE category_id = :category_id)")
       ->addParam(':category_id', 5, '/^\d+$/') // Category ID validation
       ->execute();
+```
+
+### Multi-Step Conditional Insert and Update
+Inserting data and updating records conditionally using parameters and transactions.
+
+```php
+try {
+    $query->beginTransaction();
+
+    $query->setQuery("INSERT INTO orders (customer_id, status) VALUES (:customer_id, :status)")
+          ->addParam(':customer_id', 456, '/^\d+$/')
+          ->addParam(':status', 'processing', '/^(processing|completed|shipped)$/')
+          ->execute();
+
+    $orderId = $query->lastInsertId();
+
+    $query->setQuery("UPDATE customers SET last_order_id = :last_order_id WHERE id = :customer_id")
+          ->addParam(':last_order_id', $orderId)
+          ->addParam(':customer_id', 456, '/^\d+$/')
+          ->execute();
+
+    $query->commitTransaction();
+} catch (Exception $e) {
+    $query->rollbackTransaction();
+    throw $e;
+}
 ```
 
 Each example demonstrates how to build and execute secure SQL statements using `SecureQueryHandler`, ensuring both flexibility and security in handling dynamic data.
