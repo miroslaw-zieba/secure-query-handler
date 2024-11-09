@@ -229,5 +229,3 @@ class Query {
         return file_get_contents($this->logFile);
     }
 }
-
-?>
