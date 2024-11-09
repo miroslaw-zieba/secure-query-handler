@@ -1,7 +1,7 @@
 <?php
 /**
  * Query Class - Secure SQL Query Handler with Multi-DB Support and Security Logging
- * (c) 2024 Mirosław Zięba. All rights reserved.
+ * (c) 2024-11 Mirosław Zięba. All rights reserved.
  * Website: www.miroslawzieba.com
  */
 
@@ -28,7 +28,7 @@ class Query {
         "UNAUTHORIZED_ACCESS" => 80,
         "MISSING_PARAMETER" => 20,
         "INVALID_PARAMETER_FORMAT" => 50,
-        "INVALID_PARAMETER_VALUE" => 25,
+        "INVALID_PARAMETER_VALUE" => 25,  
         "MULTIPLE_LOGIN_ATTEMPTS" => 70,
         "DATABASE_MANIPULATION_ATTEMPT" => 100,
         "INVALID_SQL_SYNTAX" => 40,
@@ -88,8 +88,13 @@ class Query {
     }
 
     public function setQuery($query) {
+        $this->resetParams();
         $this->query = $query;
         return $this;
+    }
+
+    private function resetParams() {
+        $this->params = [];
     }
 
     public function addParam($param, $value, $validate = null) {
@@ -117,6 +122,15 @@ class Query {
     }
 
     public function execute() {
+
+        /*
+        echo "Query: " . $this->query . "<br>";
+        echo "Parameters: ";
+        print_r($this->params);
+        ob_flush();
+        flush();
+        */
+
         if (isset($this->cache[$this->query])) {
             return $this->cache[$this->query];
         }
@@ -168,8 +182,8 @@ class Query {
                 $this->pdo->rollBack();
                 $this->transactionStarted = false;
             }
-            $this->logError("Execution failed: " . $e->getMessage());
-            throw new Exception("Query execution error.");
+            $this->logError("Execution failed: " . $e->getMessage() . " | Query: " . $this->query);
+            throw new Exception("Query execution error: " . $e->getMessage());
         }
     }
 
@@ -178,7 +192,7 @@ class Query {
         file_put_contents($this->logFile, $logEntry, FILE_APPEND);
 
         if (in_array("database", $this->logTo)) {
-            $this->logToDatabase($logEntry);
+            $this->logToDatabase($message);
         }
 
         if (in_array("email", $this->logTo)) {
@@ -186,9 +200,9 @@ class Query {
         }
     }
 
-    private function logToDatabase($logEntry) {
-        $stmt = $this->pdo->prepare("INSERT INTO sf_error_logs (log_entry, created_at) VALUES (:logEntry, NOW())");
-        $stmt->execute([':logEntry' => $logEntry]);
+    private function logToDatabase($message) {
+        $stmt = $this->pdo->prepare("INSERT INTO sf_events_log (user_id, type, message, ip_address, host, points, timestamp) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+        $stmt->execute([$this->currentUserId ?? 'unknown', 'error', $message, $_SERVER['REMOTE_ADDR'], gethostbyaddr($_SERVER['REMOTE_ADDR']), 10]);
     }
 
     public function enableDebugMode($logTo = []) {
