@@ -1,7 +1,7 @@
 <?php
 /**
  * Query Class - Secure SQL Query Handler with Multi-DB Support and Security Logging
- * (c) 2024-11 Mirosław Zięba. All rights reserved.
+ * (c) 2024 Mirosław Zięba. All rights reserved.
  * Website: www.miroslawzieba.com
  */
 
@@ -42,13 +42,16 @@ class Query {
         "DEBUG_MODE_ENABLED_UNAUTHORIZED" => 70
     ];
 
+    /**
+     * Constructor: Initializes the database connection with optional configuration.
+     */
     public function __construct($dbConfig = null) {
         $host = $dbConfig['host'] ?? $_SESSION['db']['host'];
         $user = $dbConfig['user'] ?? $_SESSION['db']['user'];
         $pass = $dbConfig['pass'] ?? $_SESSION['db']['pass'];
         $dbname = $dbConfig['name'] ?? $_SESSION['db']['name'];
-        $port = $dbConfig['port'] ?? '3306'; // default MySQL port
-        $driver = $dbConfig['driver'] ?? 'mysql'; // default to MySQL
+        $port = $dbConfig['port'] ?? '3306';
+        $driver = $dbConfig['driver'] ?? 'mysql';
         $dsn = $this->createDsn($driver, $host, $dbname, $port);
 
         $options = [
@@ -69,6 +72,9 @@ class Query {
         }
     }
 
+    /**
+     * Generates DSN based on the database driver.
+     */
     private function createDsn($driver, $host, $dbname, $port) {
         switch ($driver) {
             case 'pgsql':
@@ -80,6 +86,9 @@ class Query {
         }
     }
 
+    /**
+     * Checks if the IP address is blocked due to exceeding error threshold.
+     */
     private function isBlockedIP($ip) {
         $stmt = $this->pdo->prepare("SELECT SUM(points) as total_points FROM sf_events_log WHERE ip_address = :ip");
         $stmt->execute([':ip' => $ip]);
@@ -87,11 +96,17 @@ class Query {
         return $result && $result['total_points'] >= $this->errorPointsThreshold;
     }
 
+    /**
+     * Sets the SQL query to be executed.
+     */
     public function setQuery($query) {
         $this->query = $query;
         return $this;
     }
 
+    /**
+     * Adds a parameter to the query with optional validation.
+     */
     public function addParam($param, $value, $validate = null) {
         if ($validate && !$this->validateParam($value, $validate)) {
             $this->logSecurityEvent("INVALID_PARAMETER_VALUE", $param, $value);
@@ -101,10 +116,16 @@ class Query {
         return $this;
     }
 
+    /**
+     * Validates a parameter based on provided regex.
+     */
     private function validateParam($value, $validate) {
         return preg_match($validate, $value);
     }
 
+    /**
+     * Logs security-related events for monitoring.
+     */
     private function logSecurityEvent($eventCode, $param = null, $value = null) {
         $userId = $this->currentUserId ?? 'unknown';
         $ip = $_SERVER['REMOTE_ADDR'];
@@ -116,6 +137,9 @@ class Query {
         $stmt->execute([$userId, $eventCode, $message, $ip, $host, $points]);
     }
 
+    /**
+     * Executes the prepared SQL query, handling transactions and caching results.
+     */
     public function execute() {
         if (isset($this->cache[$this->query])) {
             return $this->cache[$this->query];
@@ -173,6 +197,9 @@ class Query {
         }
     }
 
+    /**
+     * Logs errors to a file and optionally sends notifications.
+     */
     private function logError($message) {
         $logEntry = date("Y-m-d H:i:s") . " - ERROR: $message\n";
         file_put_contents($this->logFile, $logEntry, FILE_APPEND);
@@ -186,18 +213,21 @@ class Query {
         }
     }
 
-    private function logToDatabase($logEntry, $type) {
-        $stmt = $this->pdo->prepare("INSERT INTO sf_events_log (type, message, ip_address, timestamp) VALUES (?, ?, ?, NOW())");
-        $stmt->execute([$type, $logEntry, $_SERVER['REMOTE_ADDR']]);
-    }
-
+    /**
+     * Enables debug mode and specifies where to log errors.
+     */
     public function enableDebugMode($logTo = []) {
         $this->debugMode = true;
         $this->logTo = $logTo;
         return $this;
     }
 
+    /**
+     * Retrieves all logs for review.
+     */
     public function getLogs() {
         return file_get_contents($this->logFile);
     }
 }
+
+?>
