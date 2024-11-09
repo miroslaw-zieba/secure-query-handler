@@ -6,29 +6,29 @@
  */
 
 class Query {
-    private $pdo;
-    private $query;
-    private $stmt;
-    private $params = [];
-    private $cache = [];
-    private $logFile = "query_log.txt";
-    private $debugMode = false;
-    private $adminEmails;
-    private $adminIPs;
-    private $logTo = [];
-    private $currentUserId;
-    private $userRoles = [];
-    private $lastInsertId;
-    private $affectedRows;
-    private $transactionStarted = false;
-    private $executionTime;
-    private $errorPointsThreshold = 1000;
-    private $errorDictionary = [
+    private $pdo; // PDO instance for database connection
+    private $query; // Stores the SQL query to be executed
+    private $stmt; // Holds the prepared statement
+    private $params = []; // Array of parameters for query binding
+    private $cache = []; // Caches results of executed queries
+    private $logFile = "query_log.txt"; // File path for logging errors
+    private $debugMode = false; // Debug mode flag
+    private $adminEmails; // Stores emails for alert notifications
+    private $adminIPs; // Stores IPs for admin-level access checks
+    private $logTo = []; // Stores logging options (database, file, etc.)
+    private $currentUserId; // Stores the current user ID for logs
+    private $userRoles = []; // Stores user roles for permission checks
+    private $lastInsertId; // Stores the last insert ID after insert queries
+    private $affectedRows; // Number of affected rows from the last query
+    private $transactionStarted = false; // Tracks transaction state
+    private $executionTime; // Measures the time taken for query execution
+    private $errorPointsThreshold = 1000; // Security points threshold for blocking
+    private $errorDictionary = [ // Dictionary for security events and point values
         "SQL_INJECTION_ATTEMPT" => 90,
         "UNAUTHORIZED_ACCESS" => 80,
         "MISSING_PARAMETER" => 20,
         "INVALID_PARAMETER_FORMAT" => 50,
-        "INVALID_PARAMETER_VALUE" => 25,  
+        "INVALID_PARAMETER_VALUE" => 25,
         "MULTIPLE_LOGIN_ATTEMPTS" => 70,
         "DATABASE_MANIPULATION_ATTEMPT" => 100,
         "INVALID_SQL_SYNTAX" => 40,
@@ -43,28 +43,28 @@ class Query {
     ];
 
     public function __construct($dbConfig = null) {
-        $host = $dbConfig['host'] ?? $_SESSION['db']['host'];
-        $user = $dbConfig['user'] ?? $_SESSION['db']['user'];
-        $pass = $dbConfig['pass'] ?? $_SESSION['db']['pass'];
-        $dbname = $dbConfig['name'] ?? $_SESSION['db']['name'];
-        $port = $dbConfig['port'] ?? '3306';
-        $driver = $dbConfig['driver'] ?? 'mysql';
-        $dsn = $this->createDsn($driver, $host, $dbname, $port);
+        $host = $dbConfig['host'] ?? $_SESSION['db']['host']; // Get host from config or session
+        $user = $dbConfig['user'] ?? $_SESSION['db']['user']; // Get user from config or session
+        $pass = $dbConfig['pass'] ?? $_SESSION['db']['pass']; // Get password from config or session
+        $dbname = $dbConfig['name'] ?? $_SESSION['db']['name']; // Get database name from config or session
+        $port = $dbConfig['port'] ?? '3306'; // Default port for MySQL
+        $driver = $dbConfig['driver'] ?? 'mysql'; // Default driver is MySQL
+        $dsn = $this->createDsn($driver, $host, $dbname, $port); // Generate DSN
 
         $options = [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_PERSISTENT => true,
-            PDO::ATTR_EMULATE_PREPARES => false
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, // Set error mode to exception
+            PDO::ATTR_PERSISTENT => true, // Use persistent connection
+            PDO::ATTR_EMULATE_PREPARES => false // Disable emulated prepares
         ];
 
         try {
-            $this->pdo = new PDO($dsn, $user, $pass, $options);
+            $this->pdo = new PDO($dsn, $user, $pass, $options); // Create PDO instance
         } catch (PDOException $e) {
-            $this->logError("Connection failed: " . $e->getMessage());
-            throw new Exception("Database connection error.");
+            $this->logError("Connection failed: " . $e->getMessage()); // Log connection error
+            throw new Exception("Database connection error."); // Throw general exception
         }
 
-        if ($this->isBlockedIP($_SERVER['REMOTE_ADDR'])) {
+        if ($this->isBlockedIP($_SERVER['REMOTE_ADDR'])) { // Check if IP is blocked
             throw new Exception("Access denied. Your IP has been blocked due to multiple security violations.");
         }
     }
@@ -72,42 +72,42 @@ class Query {
     private function createDsn($driver, $host, $dbname, $port) {
         switch ($driver) {
             case 'pgsql':
-                return "pgsql:host=$host;port=$port;dbname=$dbname";
+                return "pgsql:host=$host;port=$port;dbname=$dbname"; // DSN for PostgreSQL
             case 'sqlsrv':
-                return "sqlsrv:Server=$host,$port;Database=$dbname";
+                return "sqlsrv:Server=$host,$port;Database=$dbname"; // DSN for SQL Server
             default:
-                return "mysql:host=$host;dbname=$dbname;port=$port;charset=utf8mb4";
+                return "mysql:host=$host;dbname=$dbname;port=$port;charset=utf8mb4"; // DSN for MySQL
         }
     }
 
     private function isBlockedIP($ip) {
         $stmt = $this->pdo->prepare("SELECT SUM(points) as total_points FROM sf_events_log WHERE ip_address = :ip");
-        $stmt->execute([':ip' => $ip]);
+        $stmt->execute([':ip' => $ip]); // Execute with IP parameter
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result && $result['total_points'] >= $this->errorPointsThreshold;
+        return $result && $result['total_points'] >= $this->errorPointsThreshold; // Check if points exceed threshold
     }
 
     public function setQuery($query) {
-        $this->resetParams();
+        $this->resetParams(); // Clear parameters before setting a new query
         $this->query = $query;
         return $this;
     }
 
     private function resetParams() {
-        $this->params = [];
+        $this->params = []; // Clear stored parameters
     }
 
     public function addParam($param, $value, $validate = null) {
         if ($validate && !$this->validateParam($value, $validate)) {
-            $this->logSecurityEvent("INVALID_PARAMETER_VALUE", $param, $value);
-            throw new Exception("Validation failed for parameter: $param");
+            $this->logSecurityEvent("INVALID_PARAMETER_VALUE", $param, $value); // Log invalid parameter event
+            throw new Exception("Validation failed for parameter: $param"); // Throw validation exception
         }
-        $this->params[$param] = $value;
+        $this->params[$param] = $value; // Add parameter to array
         return $this;
     }
 
     private function validateParam($value, $validate) {
-        return preg_match($validate, $value);
+        return preg_match($validate, $value); // Validate parameter using regex
     }
 
     private function logSecurityEvent($eventCode, $param = null, $value = null) {
@@ -122,39 +122,30 @@ class Query {
     }
 
     public function execute() {
-
-        /*
-        echo "Query: " . $this->query . "<br>";
-        echo "Parameters: ";
-        print_r($this->params);
-        ob_flush();
-        flush();
-        */
-
         if (isset($this->cache[$this->query])) {
-            return $this->cache[$this->query];
+            return $this->cache[$this->query]; // Return cached result if exists
         }
 
         try {
-            $startTime = microtime(true);
-            $this->stmt = $this->pdo->prepare($this->query);
+            $startTime = microtime(true); // Start timing for execution
+            $this->stmt = $this->pdo->prepare($this->query); // Prepare query
 
             foreach ($this->params as $param => $value) {
-                $this->stmt->bindValue($param, $value);
+                $this->stmt->bindValue($param, $value); // Bind each parameter
             }
 
             if (!$this->transactionStarted) {
-                $this->pdo->beginTransaction();
+                $this->pdo->beginTransaction(); // Begin transaction if not started
                 $this->transactionStarted = true;
             }
 
-            $this->stmt->execute();
-            $this->executionTime = microtime(true) - $startTime;
-            $this->lastInsertId = $this->pdo->lastInsertId();
-            $this->affectedRows = $this->stmt->rowCount();
+            $this->stmt->execute(); // Execute the query
+            $this->executionTime = microtime(true) - $startTime; // Calculate execution time
+            $this->lastInsertId = $this->pdo->lastInsertId(); // Get last insert ID
+            $this->affectedRows = $this->stmt->rowCount(); // Get affected rows count
 
             if ($this->transactionStarted) {
-                $this->pdo->commit();
+                $this->pdo->commit(); // Commit transaction
                 $this->transactionStarted = false;
             }
 
@@ -174,29 +165,29 @@ class Query {
                 $result['rowCount'] = $this->affectedRows;
             }
 
-            $this->cache[$this->query] = $result;
+            $this->cache[$this->query] = $result; // Cache the result
             return $result;
 
         } catch (PDOException $e) {
             if ($this->transactionStarted) {
-                $this->pdo->rollBack();
+                $this->pdo->rollBack(); // Roll back if transaction was started
                 $this->transactionStarted = false;
             }
-            $this->logError("Execution failed: " . $e->getMessage() . " | Query: " . $this->query);
-            throw new Exception("Query execution error: " . $e->getMessage());
+            $this->logError("Execution failed: " . $e->getMessage() . " | Query: " . $this->query); // Log the error
+            throw new Exception("Query execution error: " . $e->getMessage()); // Throw execution exception
         }
     }
 
     private function logError($message) {
         $logEntry = date("Y-m-d H:i:s") . " - ERROR: $message\n";
-        file_put_contents($this->logFile, $logEntry, FILE_APPEND);
+        file_put_contents($this->logFile, $logEntry, FILE_APPEND); // Write error to log file
 
         if (in_array("database", $this->logTo)) {
-            $this->logToDatabase($message);
+            $this->logToDatabase($message); // Log error to database
         }
 
         if (in_array("email", $this->logTo)) {
-            $this->sendEmail($message);
+            $this->sendEmail($message); // Send error via email
         }
     }
 
@@ -206,12 +197,12 @@ class Query {
     }
 
     public function enableDebugMode($logTo = []) {
-        $this->debugMode = true;
-        $this->logTo = $logTo;
+        $this->debugMode = true; // Enable debug mode
+        $this->logTo = $logTo; // Set logging options
         return $this;
     }
 
     public function getLogs() {
-        return file_get_contents($this->logFile);
+        return file_get_contents($this->logFile); // Return contents of the log file
     }
 }
