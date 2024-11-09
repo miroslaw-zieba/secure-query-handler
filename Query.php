@@ -28,7 +28,7 @@ class Query {
         "UNAUTHORIZED_ACCESS" => 80,
         "MISSING_PARAMETER" => 20,
         "INVALID_PARAMETER_FORMAT" => 50,
-        "INVALID_PARAMETER_VALUE" => 25,  // Added penalty for invalid parameter values
+        "INVALID_PARAMETER_VALUE" => 25,
         "MULTIPLE_LOGIN_ATTEMPTS" => 70,
         "DATABASE_MANIPULATION_ATTEMPT" => 100,
         "INVALID_SQL_SYNTAX" => 40,
@@ -64,7 +64,6 @@ class Query {
             throw new Exception("Database connection error.");
         }
 
-        // Block users with high security points
         if ($this->isBlockedIP($_SERVER['REMOTE_ADDR'])) {
             throw new Exception("Access denied. Your IP has been blocked due to multiple security violations.");
         }
@@ -185,6 +184,11 @@ class Query {
         if (in_array("email", $this->logTo)) {
             $this->sendEmail($message);
         }
+    }
+
+    private function logToDatabase($logEntry, $type) {
+        $stmt = $this->pdo->prepare("INSERT INTO sf_events_log (type, message, ip_address, timestamp) VALUES (?, ?, ?, NOW())");
+        $stmt->execute([$type, $logEntry, $_SERVER['REMOTE_ADDR']]);
     }
 
     public function enableDebugMode($logTo = []) {
