@@ -58,7 +58,7 @@ $starframe_config = [
     // Logging, debugging, and cache configuration
     'storage' => [
         // Common base path
-        'basePath' => '/home/user/domains/applicationname.com/public_html/', // Main prefix for files
+        'basePath' => '/home/user/domains/applicationname.com/', // Main prefix for files
 
         // Logging configuration
         'log' => [
